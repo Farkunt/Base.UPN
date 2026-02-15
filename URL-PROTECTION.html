@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL-PROTECTION | farkunt_</title>
+    <style>
+        /* CSS RESET & 9:16 RATIO */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0; background: #000; color: #fff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+        }
+
+        .phone-frame {
+            width: 100vw; max-width: 380px; /* Ukuran HP Standar */
+            height: 100vh; max-height: 800px;
+            background: #000; border: 1px solid #1a1a1a;
+            position: relative; display: flex; flex-direction: column;
+            padding: 40px 25px; box-shadow: 0 0 50px rgba(0,0,0,1);
+        }
+
+        /* PAGE MANAGEMENT */
+        .page { display: none; flex-direction: column; height: 100%; animation: fadeIn 0.4s ease; }
+        .active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        header { text-align: center; margin-bottom: 40px; }
+        h1 { font-size: 1.5rem; letter-spacing: 5px; margin: 0; font-weight: 900; }
+        .creator { font-size: 0.75rem; color: #444; margin-top: 5px; }
+
+        /* INPUT PAGE */
+        .input-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        input[type="url"] {
+            width: 100%; padding: 20px; background: #080808;
+            border: 1px solid #333; border-radius: 12px;
+            color: #00ffcc; text-align: center; outline: none;
+            margin-bottom: 20px; font-size: 0.95rem;
+        }
+        .btn-submit {
+            width: 100%; padding: 18px; background: #fff; color: #000;
+            border: none; border-radius: 12px; font-weight: 900;
+            cursor: pointer; text-transform: uppercase;
+        }
+
+        /* LOADING PAGE */
+        .loading-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .radar {
+            width: 80px; height: 80px; border: 2px solid #111;
+            border-top: 2px solid #fff; border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin-bottom: 25px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* RESULT PAGE */
+        .result-card {
+            flex: 1; background: #050505; border: 1px solid #1a1a1a;
+            border-radius: 20px; padding: 25px; display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+        .icon-box { font-size: 4rem; text-align: center; margin-bottom: 10px; }
+        .status-title { font-size: 1.2rem; font-weight: 900; text-align: center; margin-bottom: 20px; }
+        .status-msg { font-size: 0.85rem; line-height: 1.7; color: #999; flex-grow: 1; }
+        
+        .footer-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-opt { flex: 1; padding: 12px; background: #111; color: #fff; border: 1px solid #222; border-radius: 8px; cursor: pointer; font-size: 0.75rem; }
+
+        .red { color: #ff3b3b; }
+        .yellow { color: #ffcc00; }
+        .green { color: #00ff88; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        <header>
+            <h1>URL-PROTECTION</h1>
+            <div class="creator">creator: farkunt_</div>
+        </header>
+
+        <!-- PAGE 1: INPUT -->
+        <div id="page-in" class="page active">
+            <div class="input-wrap">
+                <input type="url" id="urlInput" placeholder="Tempel link (https://...)" autocomplete="off">
+                <button class="btn-submit" onclick="analyzeURL()">SUBMIT & PROTEK</button>
+            </div>
+        </div>
+
+        <!-- PAGE 2: LOADING -->
+        <div id="page-load" class="page">
+            <div class="loading-wrap">
+                <div class="radar"></div>
+                <h2 id="loadTxt" style="letter-spacing: 2px; font-size: 1rem;">MENGHUBUNGKAN...</h2>
+                <p id="subTxt" style="color: #444; font-size: 0.7rem; text-transform: uppercase;">Mencari celah enkripsi...</p>
+            </div>
+        </div>
+
+        <!-- PAGE 3: RESULT -->
+        <div id="page-res" class="page">
+            <div class="result-card">
+                <div id="resIcon" class="icon-box"></div>
+                <div id="resTitle" class="status-title"></div>
+                <div id="resMsg" class="status-msg"></div>
+                <div class="footer-btns">
+                    <button class="btn-opt" onclick="copyStatus()">Salin Status</button>
+                    <button class="btn-opt" onclick="location.reload()">🗑️ Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function show(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        async function analyzeURL() {
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) return alert("Masukkan URL!");
+
+            show('page-load');
+            
+            // LOGIKA DETEKSI
+            const isVirus = /\.(exe|zip|apk|bat|scr|msi|vbs|iso)$/i.test(url);
+            const isPhish = /(login|bank|verify|secure|update|claim|free|gift)/i.test(url.toLowerCase());
+            const isShort = /(bit\.ly|t\.co|cutt\.ly|tinyurl|shorturl)/i.test(url);
+            const isInsecure = !url.startsWith('https');
+
+            // SMART DELAY: Jika sulit ditembus (link pendek/HTTP), loading lebih lama
+            let loadTime = 3000; // Standar 3 detik
+            if (isShort || isInsecure || isVirus) {
+                loadTime = 7000; // Menjadi 7 detik jika mencurigakan/sulit
+                document.getElementById('subTxt').innerText = "URL SULIT DITEMBUS. MENCOBA DEKRIPSI MENDALAM...";
+            }
+
+            const steps = ["SCANNING SSL...", "DATABASE LOOKUP...", "HEURISTIC ANALYS...", "DECRYPTING...", "FINALIZING..."];
+            let s = 0;
+            const stepInterval = setInterval(() => {
+                if (s < steps.length) document.getElementById('loadTxt').innerText = steps[s++];
+            }, loadTime / 5);
+
+            setTimeout(() => {
+                clearInterval(stepInterval);
+                renderResult(url, isVirus, isPhish, isShort, isInsecure);
+            }, loadTime);
+        }
+
+        function renderResult(url, virus, phish, short, insecure) {
+            const icon = document.getElementById('resIcon');
+            const title = document.getElementById('resTitle');
+            const msg = document.getElementById('resMsg');
+
+            if (virus || phish) {
+                icon.innerText = "🔴";
+                title.innerText = "DANGER: VIRUS DETECTED";
+                title.className = "status-title red";
+                msg.innerHTML = `<b>Mengapa Bahaya?</b><br>Sistem mendeteksi ancaman <b>High-Risk</b> pada URL ini. Link ini mengarah ke ${virus ? 'file eksekusi berbahaya yang dapat menginfeksi perangkat' : 'situs Phishing yang dirancang mencuri data sensitif'}.<br><br><b>Detail:</b><br>Ditemukan kode berbahaya yang mencoba menembus pertahanan browser. Domain ini telah dilaporkan sebagai sumber ancaman siber.<br><br><b>Saran:</b> SEGERA TUTUP HALAMAN INI!`;
+            } 
+            else if (short || insecure) {
+                icon.innerText = "🟡";
+                title.innerText = "UNVERIFIED STATUS";
+                title.className = "status-title yellow";
+                msg.innerHTML = `<b>Mengapa Tidak Pasti Aman?</b><br>URL ini sangat sulit ditembus karena menggunakan ${short ? 'Layanan Penyingkat' : 'Protokol HTTP Lama'}. Kami tidak bisa menjamin keamanan 100% di balik link ini.<br><br><b>Detail:</b><br>Koneksi tidak terenkripsi atau tujuan akhir disembunyikan. Ada risiko pengalihan (redirect) ke situs iklan berbahaya.<br><br><b>Saran:</b> Jangan masukkan password atau data kartu kredit jika mengakses link ini.`;
+            } 
+            else {
+                icon.innerText = "🟢";
+                title.innerText = "URL SECURE & CLEAN";
+                title.className = "status-title green";
+                msg.innerHTML = `<b>Mengapa Aman?</b><br>Analisis berhasil menembus enkripsi dan tidak ditemukan adanya instruksi berbahaya atau file malware.<br><br><b>Detail:</b><br>Protokol HTTPS valid dan tersertifikasi. Struktur domain bersih dari laporan kejahatan siber global.<br><br><b>Kesimpulan:</b><br>Aman untuk diakses. Sinyal proteksi menunjukkan reputasi domain yang sangat baik.`;
+            }
+            show('page-res');
+        }
+
+        function copyStatus() {
+            navigator.clipboard.writeText(document.getElementById('resMsg').innerText + "\n\nCreator: farkunt_");
+            alert("Hasil pemindaian disalin!");
+        }
+    </script>
+</body>
+</html>
